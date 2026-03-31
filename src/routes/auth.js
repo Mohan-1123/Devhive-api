@@ -57,7 +57,13 @@ authRouter.post("/login", async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    res.cookie("token", token);
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     const userObj = user.toObject();
     delete userObj.PassWord;
@@ -69,7 +75,13 @@ authRouter.post("/login", async (req, res) => {
 
 // POST /api/auth/logout — clear the JWT cookie and log out
 authRouter.post("/logout", (req, res) => {
-  res.cookie("token", null, { expires: new Date(0) });
+  const isProduction = process.env.NODE_ENV === "production";
+  res.cookie("token", null, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    expires: new Date(0),
+  });
   res.status(200).json({ message: "Logout successful" });
 });
 
