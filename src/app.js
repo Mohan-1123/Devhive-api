@@ -37,6 +37,16 @@ app.use("/api/request", requestRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 
+// debug endpoint — remove after fixing
+app.get("/api/debug", (req, res) => {
+  res.json({
+    cookies: req.cookies,
+    jwt_secret_set: !!process.env.JWT_SECRET,
+    node_env: process.env.NODE_ENV,
+    frontend_url: process.env.FRONTEND_URL,
+  });
+});
+
 // track online users: userId -> socketId
 const onlineUsers = {};
 
