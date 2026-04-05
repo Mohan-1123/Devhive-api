@@ -2,7 +2,7 @@ const express = require("express");
 const paymentRouter = express.Router();
 
 const { auth } = require("../middlewares/auth");
-const razorpay = require("../config/razorpay");
+const getRazorpay = require("../config/razorpay");
 const Payment = require("../models/payment");
 const User = require("../models/user");
 
@@ -15,7 +15,7 @@ paymentRouter.post("/order", auth, async (req, res) => {
       return res.status(400).json({ error: "You are already a premium member" });
     }
 
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: 99900, // ₹999 in paise
       currency: "INR",
       receipt: `rcpt_${userId.toString().slice(-8)}_${Date.now().toString().slice(-8)}`,
@@ -65,7 +65,7 @@ paymentRouter.post("/verify", auth, async (req, res) => {
     }
 
     // Verify signature using Razorpay's built-in method
-    const isValid = razorpay.validatePaymentSignature(
+    const isValid = getRazorpay().validatePaymentSignature(
       { razorpay_order_id, razorpay_payment_id },
       razorpay_signature
     );
@@ -94,7 +94,7 @@ paymentRouter.post("/webhook", async (req, res) => {
   try {
     const webhookSignature = req.headers["x-razorpay-signature"];
 
-    const isValid = razorpay.validateWebhookSignature(
+    const isValid = getRazorpay().validateWebhookSignature(
       JSON.stringify(req.body),
       webhookSignature,
       process.env.RAZORPAY_WEBHOOK_SECRET
