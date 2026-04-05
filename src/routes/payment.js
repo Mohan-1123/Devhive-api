@@ -55,35 +55,10 @@ paymentRouter.post("/order", auth, async (req, res) => {
   }
 });
 
-// POST /api/payment/verify — verify payment signature and activate premium
-paymentRouter.post("/verify", auth, async (req, res) => {
+// GET /api/payment/verify — check if logged-in user is premium
+paymentRouter.get("/verify", auth, async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({ error: "Missing payment details" });
-    }
-
-    // Verify signature using Razorpay's built-in method
-    const isValid = getRazorpay().validatePaymentSignature(
-      { razorpay_order_id, razorpay_payment_id },
-      razorpay_signature
-    );
-
-    if (!isValid) {
-      return res.status(400).json({ error: "Invalid payment signature" });
-    }
-
-    // Mark payment as paid
-    await Payment.findOneAndUpdate(
-      { orderId: razorpay_order_id },
-      { paymentId: razorpay_payment_id, status: "paid" }
-    );
-
-    // Activate lifetime premium on user
-    await User.findByIdAndUpdate(req.user._id, { isPremium: true });
-
-    res.status(200).json({ message: "Payment verified. Welcome to Premium!" });
+    res.status(200).json({ isPremium: req.user.isPremium });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -105,9 +80,11 @@ paymentRouter.post("/webhook", async (req, res) => {
     }
 
     const event = req.body;
+    console.log("[webhook] event received:", event.event);
 
     if (event.event === "payment.captured") {
       const { order_id, id: payment_id } = event.payload.payment.entity;
+      console.log("[webhook] payment captured — order:", order_id, "payment:", payment_id);
 
       const payment = await Payment.findOneAndUpdate(
         { orderId: order_id },
@@ -117,11 +94,13 @@ paymentRouter.post("/webhook", async (req, res) => {
 
       if (payment) {
         await User.findByIdAndUpdate(payment.userId, { isPremium: true });
+        console.log("[webhook] isPremium set for user:", payment.userId);
       }
     }
 
     if (event.event === "payment.failed") {
       const { order_id, id: payment_id } = event.payload.payment.entity;
+      console.log("[webhook] payment failed — order:", order_id);
 
       await Payment.findOneAndUpdate(
         { orderId: order_id },
