@@ -30,12 +30,14 @@ const profileRoutes = require("./routes/profile");
 const requestRoutes = require("./routes/request");
 const userRoutes = require("./routes/user");
 const chatRoutes = require("./routes/chat");
+const paymentRoutes = require("./routes/payment");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/request", requestRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/payment", paymentRoutes);
 
 // debug endpoint — remove after fixing
 app.get("/api/debug", (req, res) => {
